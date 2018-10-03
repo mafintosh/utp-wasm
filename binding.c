@@ -11,6 +11,7 @@ EM_JS(int, js_utp_on_accept, (int id, int socket), { return global._utp_on_accep
 EM_JS(void, js_utp_on_eof, (int id, int socket_id), { global._utp_on_eof(id, socket_id) });
 EM_JS(void, js_utp_on_writable, (int id, int socket_id), { global._utp_on_writable(id, socket_id) });
 EM_JS(void, js_utp_on_destroying, (int id, int socket_id), { global._utp_on_destroying(id, socket_id) });
+EM_JS(void, js_utp_on_connect, (int id, int socket_id), { global._utp_on_connect(id, socket_id) });
 
 struct utp_wrap {
   utp_context *ctx;
@@ -23,6 +24,10 @@ on_utp_state_change (utp_callback_arguments *a) {
   int socket_id = utp_get_userdata(a->socket);
  
   switch (a->state) {
+    case UTP_STATE_CONNECT: {
+      js_utp_on_connect(wrap->id, socket_id);
+    }
+    break;
     case UTP_STATE_EOF: {
       js_utp_on_eof(wrap->id, socket_id);
     }
@@ -128,6 +133,22 @@ void close_socket (utp_socket *socket) {
 EMSCRIPTEN_KEEPALIVE
 void destroy_utp (struct utp_wrap *wrap) {
   utp_destroy(wrap->ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int connect_utp (struct utp_wrap *wrap, int socket_id, int port, int ip) {
+  struct sockaddr_in addr;
+
+  addr.sin_family = AF_INET;
+  addr.sin_port = port;
+  addr.sin_addr.s_addr = ip;
+
+  utp_socket *socket = utp_create_socket(wrap->ctx);
+  utp_connect(socket, &addr, sizeof(struct sockaddr_in));
+
+  utp_set_userdata(socket, socket_id);
+
+  return socket;
 }
 
 EMSCRIPTEN_KEEPALIVE

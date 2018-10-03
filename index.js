@@ -62,6 +62,14 @@ global._utp_on_destroying = function (id, socketId) {
   }
 }
 
+global._utp_on_connect = function (id, socketId) {
+  const sock = allocated[id]
+  if (sock) {
+    const socket = sock._sockets[socketId]
+    if (socket) socket._onconnect()
+  }
+}
+
 module.exports = () => new UTP()
 
 class Socket extends stream.Duplex {
@@ -70,14 +78,22 @@ class Socket extends stream.Duplex {
 
     this.destroyed = false
 
+    let id = utp._sockets.indexOf(null)
+    if (id === -1) {
+      id = utp._sockets.push(this) - 1
+    } else {
+      utp._sockets[id] = this
+    }
+
     this._utp = utp
     this._ptr = 0
-    this._id = 0
-    this._vec = em._malloc(em._sizeof_iovec())
+    this._id = id
+    this._vec = 0
     this._remainder = null
     this._callback = null
     this._allowOpen = 2
     this._error = null
+    this._connected = false
 
     this.on('end', this._shutdown)
   }
@@ -86,6 +102,14 @@ class Socket extends stream.Duplex {
 
   _write (data, enc, cb) {
     if (this.destroyed) return
+
+    if (!this._connected) {
+      this._remainder = data
+      this._callback = cb
+      return
+    }
+
+    if (!this._vec) this._vec = em._malloc(em._sizeof_iovec())
 
     const len = data.length
     const ptr = em._malloc(len)
@@ -109,14 +133,25 @@ class Socket extends stream.Duplex {
     if (this._allowOpen && !--this._allowOpen) this.destroy()
   }
 
+  _onconnect () {
+    this.emit('connect')
+    this._connected = true
+    if (this._remainder) this._ondrain()
+  }
+
   destroy (err) {
     if (this.destroyed) return
     this.destroyed = true
+
     if (err) this._error = err
-    em._close_socket(this._ptr)
+
+    if (!this._ptr) this._ondestroy()
+    else em._close_socket(this._ptr)
   }
 
   _ondestroy () {
+    if (this._vec) em._free(this._vec)
+
     const sockets = this._utp._sockets
     sockets[this._id] = null
     while (sockets.length && !sockets[sockets.length - 1]) {
@@ -169,15 +204,9 @@ class UTP extends events.EventEmitter {
   }
 
   _onaccept (socket) {
-    const free = this._sockets.indexOf(null)
     const sock = new Socket(this)
     sock._ptr = socket
-    if (free === -1) {
-      sock._id = this._sockets.push(sock) - 1
-    } else {
-      this._sockets[free] = sock
-      sock._id = free
-    }
+    sock._connected = true
     process.nextTick(() => this.emit('connection', sock))
     return sock._id
   }
@@ -209,6 +238,27 @@ class UTP extends events.EventEmitter {
   _ready (cb) {
     if (!ready) return cb()
     ready.push(cb)
+  }
+
+  connect (port, host) {
+    if (!host) host = '127.0.0.1'
+
+    const self = this
+    const sock = new Socket(this)
+
+    lookup(host, function (err, ip) {
+      if (sock.destroyed) return
+      if (err) return sock.destroy(err)
+      if (!ip) return sock.destroy(new Error('Could not resolve ' + host))
+
+      self._ready(function () {
+        if (sock.destroyed) return
+        const socket = em._connect_utp(self._ptr, sock._id, port, ipToInt(ip))
+        sock._ptr = socket
+      })
+    })
+
+    return sock
   }
 
   send (...args) {
@@ -243,6 +293,19 @@ class UTP extends events.EventEmitter {
 em.onRuntimeInitialized = function () {
   for (const fn of ready) fn()
   ready = null
+}
+
+function isIP (ip) {
+  return /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)
+}
+
+function lookup (ip, cb) {
+  if (isIP(ip)) return cb(null, ip)
+  require(dnsModule()).lookup(ip, cb)
+}
+
+function dnsModule () { // workaround for require('dns') in browsers
+  return Math.random() < 1 ? 'dns' : ''
 }
 
 function issueAcks (self) {

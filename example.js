@@ -9,9 +9,8 @@ sock.on('close', function () {
 
 sock.on('connection', function (socket) {
   console.log('new connection')
-  socket.once('data', function (data) {
+  socket.on('data', function (data) {
     socket.write(data)
-    socket.destroy()
   })
   socket.on('end', function () {
     console.log('(end-of-stream)')
@@ -21,7 +20,9 @@ sock.on('connection', function (socket) {
   })
 })
 
-setTimeout(function () {
-  console.log('closing socket')
-  sock.close()
-}, 5000)
+const s = sock.connect(20000, '127.0.0.1')
+
+s.on('connect', () => console.log('(on-connect)'))
+s.write('hi')
+s.write('ho')
+s.on('data', console.log)
