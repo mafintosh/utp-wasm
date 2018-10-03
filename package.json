@@ -6,7 +6,8 @@
   "scripts": {
     "test": "standard index.js",
     "clean": "rm -f *.wasm *.wasm.map *.wast binding.js",
-    "fetch-libutp": "git submodule update --recursive --init"
+    "fetch-libutp": "git submodule update --recursive --init",
+    "emscripten": "./build.sh"
   },
   "repository": {
     "type": "git",

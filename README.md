@@ -21,6 +21,20 @@ sock.on('connection', function (connection) {
 sock.listen(20000)
 ```
 
+## Building
+
+To build this first fetch the libutp dep
+
+```sh
+npm run fetch-libutp
+```
+
+Then install emscripten and do
+
+```sh
+npm run emscripten
+```
+
 ## License
 
 MIT
