@@ -1,0 +1,3 @@
+*.o
+node_modules
+sandbox.js
