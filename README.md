@@ -21,6 +21,10 @@ sock.on('connection', function (connection) {
 sock.listen(20000)
 ```
 
+## API
+
+Shares the same api as [utp-native](http://github.com/mafintosh/utp-native).
+
 ## Building
 
 To build this first fetch the libutp dep
