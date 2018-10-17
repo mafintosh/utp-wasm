@@ -1,4 +1,4 @@
-#include "../utp.h"
+#include "deps/libutp/utp.h"
 #include <stdio.h>
 #include <emscripten.h>
 
