@@ -268,6 +268,10 @@ class UTP extends events.EventEmitter {
   bind (...args) {
     this.socket.bind(...args)
   }
+  
+  address () {
+    this.socket.address()
+  }
 
   close (onclose) {
     if (onclose) this.once('close', onclose)
