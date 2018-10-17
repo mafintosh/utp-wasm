@@ -1,7 +1,7 @@
 const stream = require('stream')
 const events = require('events')
 const dgram = require('dgram')
-const em = require('./binding')
+const em = require('./binding-inline')
 
 const allocated = global._utp_allocated || []
 let ready = []

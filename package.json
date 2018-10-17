@@ -7,7 +7,7 @@
     "test": "standard index.js",
     "clean": "rm -f *.wasm *.wasm.map *.wast binding.js",
     "fetch-libutp": "git submodule update --recursive --init",
-    "emscripten": "./build.sh"
+    "emscripten": "./build.sh && node inline.js"
   },
   "repository": {
     "type": "git",
