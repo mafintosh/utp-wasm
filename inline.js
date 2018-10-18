@@ -1,35 +1,8 @@
 const fs = require('fs')
 
-const src = `
-module.exports = Module
+const wasm = fs.readFileSync(__dirname + '/binding.wasm', 'base64')
+const dataUrl = 'data:application/wasm;base64,' + wasm
+const src = fs.readFileSync(__dirname + '/binding.js', 'utf-8')
+  .replace(/var wasmBinaryFile = 'binding.wasm'/, `var wasmBinaryFile = ENVIRONMENT_IS_WEB ? '${dataUrl}' : 'binding.wasm'`)
 
-Module.read = function (filename, binary) {
-  return Buffer.from(${JSON.stringify(fs.readFileSync(__dirname + '/binding.wasm', 'base64'))}, 'base64')
-}
-
-Module.readBinary = function (filename) {
-  return Module.read(filename, true)
-}
-
-Module.arguments = []
-
-if (typeof process !== 'undefined' && process.on) {
-  process.on('uncaughtException', function (ex) {
-    if (!(ex instanceof ExitStatus)) throw ex
-  })
-}
-
-Module.quit = function (status) {
-  if (typeof process !== 'undefined' && process.exit) process.exit(status)
-}
-`
-
-const lines = fs.readFileSync(__dirname + '/binding.js', 'utf-8')
-  .split('\n')
-
-fs.writeFileSync(__dirname + '/binding-inline.js',
-  lines.slice(0, 68).join('\n') + '\n' +
-  src +
-  lines.slice(210, 1442).join('\n') +
-  lines.slice(1452).join('\n')
-)
+fs.writeFileSync(__dirname + '/binding-inline.js', src)
