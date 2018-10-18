@@ -70,7 +70,7 @@ global._utp_on_connect = function (id, socketId) {
   }
 }
 
-module.exports = () => new UTP()
+module.exports = (opts) => new UTP(opts)
 
 class Socket extends stream.Duplex {
   constructor (utp) {
@@ -172,10 +172,12 @@ class Socket extends stream.Duplex {
 }
 
 class UTP extends events.EventEmitter {
-  constructor (onconnection) {
+  constructor (opts, onconnection) {
     super()
+    
+    if (!opts) opts = {}
 
-    this.socket = dgram.createSocket('udp4')
+    this.socket = opts.socket || dgram.createSocket('udp4')
     this.socket.on('listening', () => this.emit('listening'))
     this.socket.on('message', this._onmessage.bind(this))
     this.socket.on('error', err => this.emit('error', err))
