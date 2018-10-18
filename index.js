@@ -174,7 +174,12 @@ class Socket extends stream.Duplex {
 class UTP extends events.EventEmitter {
   constructor (opts, onconnection) {
     super()
-    
+
+    if (typeof opts === 'function') {
+      onconnection = opts
+      opts = null
+    }
+
     if (!opts) opts = {}
 
     this.socket = opts.socket || dgram.createSocket('udp4')
