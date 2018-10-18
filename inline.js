@@ -30,5 +30,6 @@ const lines = fs.readFileSync(__dirname + '/binding.js', 'utf-8')
 fs.writeFileSync(__dirname + '/binding-inline.js',
   lines.slice(0, 68).join('\n') + '\n' +
   src +
-  lines.slice(210).join('\n') + '\n'
+  lines.slice(210, 1442).join('\n') +
+  lines.slice(1452).join('\n')
 )
