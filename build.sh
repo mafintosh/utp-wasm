@@ -1,4 +1,4 @@
-emcc -g -Wall -DPOSIX -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive \
+emcc -g -Wall -DPOSIX -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive -s MODULARIZE=1 \
   deps/libutp/utp_internal.cpp \
   deps/libutp/utp_utils.cpp \
   deps/libutp/utp_hash.cpp \
